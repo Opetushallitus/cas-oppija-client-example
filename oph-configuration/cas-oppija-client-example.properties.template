@@ -1,2 +1,4 @@
 custom.cas.server.protocol=https
 custom.cas.server.host={{ host_oppija }}
+
+cas.client-host-url=https://{{ host_oppija }}
