@@ -1,0 +1,36 @@
+sudo: required
+language: java
+jdk:
+  - openjdk11
+services:
+  - docker
+cache:
+  directories:
+    - $HOME/.m2
+env:
+  global:
+    # AWS_ACCESS_KEY_ID
+    - secure: "XFXlBaA36F1uOSxZ4oEym1sCxFGMtkhNPsFZ0nhNMaZwcIycIbm7RTPJeb5Y4b26KTy+7B21HzYPucilr68a4jmKTdzy5IB/a4rmTREtpPnDDvkfyRHY5fn9sK71qWm02Be4XOAOU+clUCv2+1RQNnSm/YHbzaDnk45S7ABfhkNyAx/oz+UQ+0gLkGbednoRXW1e/orARaRWIQ5/GIxcSl6YuppBoVIxWv9SR2VeI0UmEJpJ1EFRX1nFKZy6/zRyxBxEwZeSOMZRYfE9Ny1mzcZ9fd+1t5D0CwsMVOHmXj/zxgVegHXJ6cHSB0/AUYXlL2ILDwbs1rFKYi5vKzFCPKJb9hzeTQfa3ld4B9E70TlxdqcnSjZHZ/ENqORQSdBSC0MN6f4iWWvkx51g4iiNbyzt3o45WJI5pZ+zZm4zrcGH8Y2bTwbDZz8DrW7/Ssq9hrgeXJNSEb1/YAsX7aUW3pcWZ2nGvhie4dtU8C3iYS8qSTGEReVlKuPyiDc7u8ukDd0L/ZD9+upd0MH6O6qilPxg3WVDeM++suG6ehwMGA86r8W/wvFrEnPYdxFyYVosTEHoaqLspZjTZRLHKNCRT20aJk/5pvpxT2TH7OBnbOPc83RjAZ2/jIZnDyrwv4o/VjYV1VhaMfLJDZuKyr/CDIaCuuYC1pXMcWNKTbqDQDA="
+    # AWS_SECRET_ACCESS_KEY
+    - secure: "Irkdat0br1o6fdl2oDqfu1ukhzRJxs4221TRVao/GfOVHSAZ3tVLZjpwxsKqapfNkREQYqDgi7TJ1cy/4elzTN7Dwkb+/3g77wk0lRvMRa9v8OSM6Fq6gfoF2l2O4Jsp0xMV2RAuwlud2jSDOh7y0IPnMPGVGhH91k5txNXctKndetUMdWrXJSvMwAs1wnvtyTjWFjzkM0ZnWvu8lrFTs/AhS5OO5I/9Up6db/598Otr7CMvAd5HwyKP0q/4uoJDJYwZ66TWfcoMnEDvhDSmj+KLMVrQFwAhAcMFyWpMoseuFKW5ZwSkQZswlPVwvp9/UkKOCig8Zy0JD4788eC9C1nZd9bH6WBvQWi8CSlm0ZWyfm4vwDEsqFEd9MQ4lepwxjAOWh1fTmxHhgZdZGxrJdZrcCLmfeUvkZ69ECTh/xjPqHAPlk4ubqtfDrmmgomSsbIQ1kCc/7E9vLEn5Hm9D0j2nom134pPxo49DEss3WAJt0WN2sD1ywwghl+ukOcK+z5PmZ8S1NFrkroOw0W9Jbj1YDPeRIpuJd6tT0+KixKs1auft6TPiLtRSA9vs7C2KAXxd+EicrAe2usgcyFxlwYuKX0wuy8cjQsrHDsFH0s9oXxt2MwneqceWHGcPMtIWB+u0vAFYE+jY87oUh72njIeb7xagalub1cDAyG64wA="
+
+install:
+  - git clone https://github.com/Opetushallitus/ci-tools.git
+  - source ci-tools/common/setup-tools.sh
+  - export ARTIFACT_NAME="cas-oppija-client-example"
+
+script:
+  - mvn clean install -B -Dbranch=${TRAVIS_BRANCH} -Drevision=${TRAVIS_COMMIT} -DbuildNumber=${TRAVIS_BUILD_NUMBER}
+
+  - mv target/cas-oppija-client-example-*.jar $DOCKER_BUILD_DIR/artifact/${ARTIFACT_NAME}.jar
+  - cp -vr oph-configuration $DOCKER_BUILD_DIR/config/
+
+  - export BASE_IMAGE="baseimage-fatjar:jdk11"
+  - ./ci-tools/common/pull-image.sh
+  - ./ci-tools/build/build-fatjar.sh $ARTIFACT_NAME
+
+deploy:
+  - provider: script
+    script: ./ci-tools/build/upload-image.sh $ARTIFACT_NAME
+    on:
+      all_branches: true
