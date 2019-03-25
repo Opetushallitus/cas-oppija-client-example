@@ -1,0 +1,2 @@
+custom.cas.server.protocol=https
+custom.cas.server.host={{ host_oppija }}
